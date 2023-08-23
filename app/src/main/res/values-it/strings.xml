@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tela di Contrasto</string>
+    <string name="previous">Precedente</string>
+    <string name="next">Successivo</string>
+    <string name="choose_image_color">Scegli il colore dell\'immagine</string>
+    <string name="turn_on_animation">Attiva animazione</string>
+</resources>
