@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Contrast Canvas</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="choose_image_color">Choose image color</string>
+    <string name="turn_on_animation">Turn on animation</string>
+    <string name="settings">Settings</string>
+</resources>

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Contrast Canvas</string>
+    <string name="app_name">Contrast Canvas</string> <!-- The app name typically remains unchanged -->
     <string name="previous">Vorige</string>
     <string name="next">Volgende</string>
     <string name="choose_image_color">Kies afbeeldingskleur</string>
     <string name="turn_on_animation">Animatie inschakelen</string>
+    <string name="settings">Instellingen</string>
 </resources>

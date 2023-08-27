@@ -5,4 +5,5 @@
     <string name="next">Próximo</string>
     <string name="choose_image_color">Escolha a cor da imagem</string>
     <string name="turn_on_animation">Ativar animação</string>
+    <string name="settings">Configurações</string>
 </resources>

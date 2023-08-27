@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Contrast Canvas</string>
+    <string name="previous">Iepriekšējais</string>
+    <string name="next">Nākamais</string>
+    <string name="choose_image_color">Izvēlēties attēla krāsu</string>
+    <string name="turn_on_animation">Ieslēgt animāciju</string>
+    <string name="settings">Iestatījumi</string>
+</resources>

@@ -5,4 +5,5 @@
     <string name="next">Další</string>
     <string name="choose_image_color">Vyberte barvu obrázku</string>
     <string name="turn_on_animation">Zapnout animaci</string>
+    <string name="settings">Nastaveni</string>
 </resources>

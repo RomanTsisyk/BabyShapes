@@ -5,4 +5,5 @@
     <string name="next">Επόμενο</string>
     <string name="choose_image_color">Επιλέξτε χρώμα εικόνας</string>
     <string name="turn_on_animation">Ενεργοποίηση κινούμενων σχεδίων</string>
+    <string name="settings">Ρυθμίσεις</string>
 </resources>

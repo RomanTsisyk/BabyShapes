@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Contrast Canvas</string>
+    <string name="previous">Eelmine</string>
+    <string name="next">Järgmine</string>
+    <string name="choose_image_color">Vali pildi värv</string>
+    <string name="turn_on_animation">Lülita animatsioon sisse</string>
+    <string name="settings">Seaded</string>
+</resources>
