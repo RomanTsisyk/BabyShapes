@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,44 +49,56 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+//import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
+//@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            RandomAnimalIconPager()
+            MaterialTheme {
+                Surface {
+                    MainScreen()
+                }
+            }
         }
     }
 }
 
 @Composable
+fun MainScreen() {
+    RandomAnimalIconPager()
+}
+
+@Composable
 fun RandomAnimalIconPager() {
+//    val viewModel: RandomAnimalIconPagerViewModel = viewModel() // Directly call viewModel()
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isTablet = configuration.smallestScreenWidthDp >= 600
     val orientation = configuration.orientation
     val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
+    val colors: List<Color> = listOf(Color.Black, Color.Red, Color.Yellow, Color.Blue)
 
     val iconNames = context.resources.getStringArray(R.array.icon_names)
-    val iconNamesRemembered = remember { iconNames }
-    val icons = iconNamesRemembered.map { name -> painterResource(id = getResourceId(name)) }
+
+    val icons = remember { iconNames }.map { name -> painterResource(id = getResourceId(name)) }
     val randomIconIndex = remember { mutableIntStateOf(Random.nextInt(0, iconNames.size)) }
     val fadeInAnimation = rememberInfiniteTransition(label = "")
     val isAlfaAnimationOn = remember { mutableStateOf(true) }
     val isScalingActionOn = remember { mutableStateOf(true) }
-    val colors: List<Color> = listOf(Color.Black, Color.Red, Color.Yellow, Color.Blue)
-    var selectedColor by remember { mutableStateOf(colors.first()) }
+    val selectedColor by remember { mutableStateOf(colors.first()) }
     val animationDuration = remember { mutableIntStateOf(5_000) }
     val alpha by fadeInAnimation.animateFloat(
         initialValue = if (isAlfaAnimationOn.value) 0.25f else 1f,
@@ -116,90 +129,122 @@ fun RandomAnimalIconPager() {
         modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween
     ) {
         AdaptiveLayout(isLandscape) {
-
-            Image(painter = icons[randomIconIndex.intValue],
-                contentDescription = null,
-                modifier = Modifier
-                    .padding(32.dp)
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures { _, _ ->
-                            randomIconIndex.intValue = Random.nextInt(0, iconNames.size)
-                        }
-                    }
-                    .scale(scale = scale)
-                    .graphicsLayer(alpha = alpha),
-                colorFilter = ColorFilter.tint(selectedColor) // This line applies the red tint.
-            )
-
-
+            ImageDisplay(icons, randomIconIndex, iconNames, scale, alpha, selectedColor)
             Column(
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Card {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                SettingsCard(
+                    isAlfaAnimationOn,
+                    isScalingActionOn,
+                    animationDuration,
+                    isTablet,
+                    isLandscape,
+                    colors,
+                    selectedColor
+                )
+                if (isLandscape) NavigationButtons(randomIconIndex, iconNames)
+            }
+            if (!isLandscape) NavigationButtons(randomIconIndex, iconNames)
+        }
+    }
+}
 
-                        Text(text = stringResource(R.string.settings), fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+@Composable
+private fun SettingsCard(
+    isAlfaAnimationOn: MutableState<Boolean>,
+    isScalingActionOn: MutableState<Boolean>,
+    animationDuration: MutableIntState,
+    isTablet: Boolean,
+    isLandscape: Boolean,
+    colors: List<Color>,
+    selectedColor1: Color
+) {
+    var selectedColor11 = selectedColor1
+    Card {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Text(
+                text = stringResource(R.string.settings),
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 //                AdaptiveLayout(!isLandscape) {
-                            Checkbox(checked = isAlfaAnimationOn.value && isScalingActionOn.value,
-                                onCheckedChange = {
-                                    isAlfaAnimationOn.value = it
-                                    isScalingActionOn.value = it
-                                    if (it) animationDuration.intValue = 5_000 else 0
-                                })
-                            Text(
-                                text = stringResource(R.string.turn_on_animation),
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
+                Checkbox(checked = isAlfaAnimationOn.value && isScalingActionOn.value,
+                    onCheckedChange = {
+                        isAlfaAnimationOn.value = it
+                        isScalingActionOn.value = it
+                        if (it) animationDuration.intValue = 5_000 else 0
+                    })
+                Text(
+                    text = stringResource(R.string.turn_on_animation),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
 
-                        Spacer(
-                            modifier = Modifier.width(16.dp)
+            Spacer(
+                modifier = Modifier.width(16.dp)
 //                            .height(16.dp)
-                        )
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+            )
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.choose_image_color),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = if (!isTablet || !isLandscape) Arrangement.SpaceAround else Arrangement.SpaceBetween
+                ) {
+                    colors.forEach { color ->
+                        CircleColorChoice(
+                            color = color, isSelected = color == selectedColor11
                         ) {
-                            Text(
-                                text = stringResource(R.string.choose_image_color),
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = if (!isTablet || !isLandscape) Arrangement.SpaceAround else Arrangement.SpaceBetween
-                            ) {
-                                colors.forEach { color ->
-                                    CircleColorChoice(
-                                        color = color, isSelected = color == selectedColor
-                                    ) {
-                                        selectedColor = color
-                                    }
-                                }
-                            }
+                            selectedColor11 = color
                         }
                     }
                 }
-                if (isLandscape) NavigationButtons(randomIconIndex, iconNames)
             }
-
-            if (!isLandscape) NavigationButtons(randomIconIndex, iconNames)
-
         }
-
     }
+}
+
+@Composable
+private fun ImageDisplay(
+    icons: List<Painter>,
+    randomIconIndex: MutableIntState,
+    iconNames: Array<String>,
+    scale: Float,
+    alpha: Float,
+    selectedColor1: Color
+) {
+    Image(painter = icons[randomIconIndex.intValue],
+        contentDescription = null,
+        modifier = Modifier
+            .padding(32.dp)
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { _, _ ->
+                    randomIconIndex.intValue = Random.nextInt(0, iconNames.size)
+                }
+            }
+            .scale(scale = scale)
+            .graphicsLayer(alpha = alpha),
+        colorFilter = ColorFilter.tint(selectedColor1) // This line applies the red tint.
+    )
 }
 
 @Composable
@@ -234,16 +279,6 @@ private fun NavigationButtons(
 
 fun getResourceId(resourceName: String): Int {
     return R.drawable::class.java.getField(resourceName).getInt(null)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RandomAnimalIconPagerPreview() {
-    MaterialTheme {
-        Surface {
-            RandomAnimalIconPager()
-        }
-    }
 }
 
 
