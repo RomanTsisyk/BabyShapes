@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
     kotlin("kapt")
-//    id("com.google.dagger.hilt.android")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -15,8 +15,8 @@ android {
         applicationId = "com.roman_tsisyk.contrast_canvas"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -78,12 +78,8 @@ dependencies {
     implementation (libs.androidx.lifecycle.livedata.ktx)
     implementation (libs.androidx.lifecycle.viewmodel.savedstate)
 
-//    implementation (libs.hilt.android)
-//    implementation (libs.hilt.android.compiler)
-//    kapt (libs.hilt.android.compiler)
-//    implementation(libs.hilt.android)
-//    implementation(libs.hilt.android.v244)
-//    kapt(libs.hilt.android.compiler.v244)
+    implementation (libs.hilt.android)
+    kapt (libs.hilt.android.compiler)
 
     testImplementation (libs.junit.v4132)
     testImplementation (libs.mockito.core)

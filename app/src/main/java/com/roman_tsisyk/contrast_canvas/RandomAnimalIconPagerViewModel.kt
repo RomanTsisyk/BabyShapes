@@ -1,24 +1,41 @@
-//package com.roman_tsisyk.contrast_canvas
-//
-//import androidx.lifecycle.ViewModel
-//import androidx.compose.runtime.mutableStateOf
-//import androidx.compose.ui.graphics.Color
-//import dagger.hilt.android.lifecycle.HiltViewModel
-//import kotlin.random.Random
-//import javax.inject.Inject
-//
-//@HiltViewModel
-//class RandomAnimalIconPagerViewModel @Inject constructor() : ViewModel() {
-//
-//    private val iconNames = arrayOf("icon1", "icon2", "icon3") // Replace with actual icon names
-//    val randomIconIndex = mutableStateOf(Random.nextInt(iconNames.size))
-//    var selectedColor = mutableStateOf(Color.Black)
-//
-//    fun updateRandomIconIndex() {
-//        randomIconIndex.value = Random.nextInt(iconNames.size)
-//    }
-//
-//    fun updateSelectedColor(newColor: Color) {
-//        selectedColor.value = newColor
-//    }
-//}
+package com.roman_tsisyk.contrast_canvas
+
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.ViewModel
+import kotlin.random.Random
+
+class RandomAnimalIconPagerViewModel : ViewModel() {
+
+    val randomIconIndex = mutableIntStateOf(Random.nextInt(0, 100))
+    val isAlphaAnimationOn = mutableStateOf(true)
+    val isScalingAnimationOn = mutableStateOf(true)
+    var selectedColor = mutableStateOf(Color.Black)
+    val animationDuration = mutableIntStateOf(5_000)
+    val isSettingsVisible = mutableStateOf(false)
+
+
+    fun changeSeetings(isOn: Boolean){
+        isAlphaAnimationOn.value = isOn
+        isScalingAnimationOn.value = isOn
+        randomIconIndex.intValue = Random.nextInt(0, 100)
+    }
+
+    fun toggleSettingsVisibility() {
+        isSettingsVisible.value = !isSettingsVisible.value
+    }
+
+    fun updateSelectedColor(color: Color) {
+        selectedColor.value = color
+    }
+
+    fun goToNextIcon(iconNamesArraySize: Int) {
+        randomIconIndex.value = (randomIconIndex.value + 1) % iconNamesArraySize
+    }
+
+    fun goToPreviousIcon(iconNamesArraySize: Int) {
+        randomIconIndex.value =
+            (randomIconIndex.value - 1 + iconNamesArraySize) % iconNamesArraySize
+    }
+}

@@ -2,13 +2,13 @@ package com.roman_tsisyk.contrast_canvas
 
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,10 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,11 +56,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-//import dagger.hilt.android.AndroidEntryPoint
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlin.random.Random
 
-//@AndroidEntryPoint
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,144 +83,164 @@ fun MainScreen() {
 
 @Composable
 fun RandomAnimalIconPager() {
-//    val viewModel: RandomAnimalIconPagerViewModel = viewModel() // Directly call viewModel()
-    val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    val isTablet = configuration.smallestScreenWidthDp >= 600
-    val orientation = configuration.orientation
-    val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
-    val colors: List<Color> = listOf(Color.Black, Color.Red, Color.Yellow, Color.Blue)
-
+    val isWide = isWideScreen(configuration)
+    val context = LocalContext.current
     val iconNames = context.resources.getStringArray(R.array.icon_names)
 
-    val icons = remember { iconNames }.map { name -> painterResource(id = getResourceId(name)) }
-    val randomIconIndex = remember { mutableIntStateOf(Random.nextInt(0, iconNames.size)) }
-    val fadeInAnimation = rememberInfiniteTransition(label = "")
-    val isAlfaAnimationOn = remember { mutableStateOf(true) }
-    val isScalingActionOn = remember { mutableStateOf(true) }
-    val selectedColor by remember { mutableStateOf(colors.first()) }
-    val animationDuration = remember { mutableIntStateOf(5_000) }
-    val alpha by fadeInAnimation.animateFloat(
-        initialValue = if (isAlfaAnimationOn.value) 0.25f else 1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(animationDuration.intValue, easing = FastOutLinearInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = ""
-    )
+    val colors: List<Color> = listOf(Color.Black, Color.Red, Color.Yellow, Color.Blue)
 
-    val scale by fadeInAnimation.animateFloat(
-        initialValue = if (isScalingActionOn.value) 0.25f else 1f, // Start very small
-        targetValue = 1f, // End at full size
+    val viewModel: RandomAnimalIconPagerViewModel = viewModel()
+    val randomIconIndex = viewModel.randomIconIndex
+    val isAlphaAnimationOn = viewModel.isAlphaAnimationOn
+    val isScalingAnimationOn = viewModel.isScalingAnimationOn
+    val selectedColor = viewModel.selectedColor
+    val animationDuration = viewModel.animationDuration
+    val isSettingsVisible = viewModel.isSettingsVisible.value
+    val icons = remember { iconNames }.map { name -> painterResource(id = getResourceId(name)) }
+
+    val alpha by animateFloatAsState(
+        targetValue = if (!viewModel.isAlphaAnimationOn.value) 0f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(animationDuration.intValue), repeatMode = RepeatMode.Reverse
+            animation = tween(
+                durationMillis = viewModel.animationDuration.intValue,
+                easing = FastOutLinearInEasing
+            ),
+            repeatMode = RepeatMode.Reverse
         ), label = ""
     )
 
-    LaunchedEffect(key1 = isAlfaAnimationOn.value, key2 = isScalingActionOn.value) {
-        while (isAlfaAnimationOn.value && isScalingActionOn.value) {
-            delay(animationDuration.intValue.toLong() * 2)
-            randomIconIndex.intValue = Random.nextInt(0, iconNames.size)
+    val scale by animateFloatAsState(
+        targetValue = if (!viewModel.isScalingAnimationOn.value) 0.2f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = viewModel.animationDuration.intValue),
+            repeatMode = RepeatMode.Reverse
+        ), label = ""
+    )
+
+    LaunchedEffect(key1 = isAlphaAnimationOn.value, key2 = isScalingAnimationOn.value) {
+        if (isAlphaAnimationOn.value && isScalingAnimationOn.value) {
+            while (isActive) {
+                delay(viewModel.animationDuration.intValue.toLong() * 2)
+                viewModel.goToNextIcon(iconNames.size)
+            }
         }
     }
 
     Column(
         modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween
     ) {
-        AdaptiveLayout(isLandscape) {
-            ImageDisplay(icons, randomIconIndex, iconNames, scale, alpha, selectedColor)
+        val addSpacerOnTop = !isSettingsVisible && !isWide
+        AdaptiveLayout(isWide) {
+            ImageDisplay(
+                icons,
+                randomIconIndex,
+                iconNames,
+                scale,
+                alpha,
+                selectedColor.value,
+                addSpacerOnTop
+            )
             Column(
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                SettingsCard(
-                    isAlfaAnimationOn,
-                    isScalingActionOn,
-                    animationDuration,
-                    isTablet,
-                    isLandscape,
-                    colors,
-                    selectedColor
-                )
-                if (isLandscape) NavigationButtons(randomIconIndex, iconNames)
+                if (viewModel.isSettingsVisible.value) {
+                    SettingsCard(
+                        isAlphaAnimationOn,
+                        isScalingAnimationOn,
+                        animationDuration,
+                        isWide,
+                        colors,
+                        selectedColor,
+                        viewModel
+                    )
+
+
+                    Card (modifier = Modifier.padding(8.dp)){
+                        Column(
+                            modifier = Modifier.fillMaxWidth(0.8f),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+                            Text(
+                                text = stringResource(R.string.settings),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(checked = isAlphaAnimationOn.value,
+                                    onCheckedChange = {
+                                        Log.d("Roman", "checked: $it")
+                                        viewModel.changeSeetings(it)
+                                    })
+                                Text(
+                                    text = stringResource(R.string.turn_on_animation),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.choose_image_color),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = if (isWide) Arrangement.SpaceAround else Arrangement.SpaceBetween
+                                ) {
+                                    colors.forEach { color ->
+                                        CircleColorChoice(
+                                            color = color, isSelected = color == selectedColor.value
+                                        ) {
+                                            viewModel.updateSelectedColor(color)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Button(
+                    onClick = { viewModel.toggleSettingsVisibility() },
+                    modifier = Modifier.padding(vertical = 16.dp)
+                ) {
+                    Text(if (viewModel.isSettingsVisible.value) "Hide Settings" else "Show Settings")
+                }
+                NavigationButtons(viewModel, iconNames.size)
             }
-            if (!isLandscape) NavigationButtons(randomIconIndex, iconNames)
         }
     }
 }
 
 @Composable
 private fun SettingsCard(
-    isAlfaAnimationOn: MutableState<Boolean>,
-    isScalingActionOn: MutableState<Boolean>,
+    isAlphaAnimationOn: MutableState<Boolean>,
+    isScalingAnimationOn: MutableState<Boolean>,
     animationDuration: MutableIntState,
-    isTablet: Boolean,
     isLandscape: Boolean,
     colors: List<Color>,
-    selectedColor1: Color
+    selectedColor: MutableState<Color>,
+    viewModel: RandomAnimalIconPagerViewModel
 ) {
-    var selectedColor11 = selectedColor1
-    Card {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
 
-            Text(
-                text = stringResource(R.string.settings),
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-//                AdaptiveLayout(!isLandscape) {
-                Checkbox(checked = isAlfaAnimationOn.value && isScalingActionOn.value,
-                    onCheckedChange = {
-                        isAlfaAnimationOn.value = it
-                        isScalingActionOn.value = it
-                        if (it) animationDuration.intValue = 5_000 else 0
-                    })
-                Text(
-                    text = stringResource(R.string.turn_on_animation),
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
+}
 
-            Spacer(
-                modifier = Modifier.width(16.dp)
-//                            .height(16.dp)
-            )
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.choose_image_color),
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-                Row(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = if (!isTablet || !isLandscape) Arrangement.SpaceAround else Arrangement.SpaceBetween
-                ) {
-                    colors.forEach { color ->
-                        CircleColorChoice(
-                            color = color, isSelected = color == selectedColor11
-                        ) {
-                            selectedColor11 = color
-                        }
-                    }
-                }
-            }
-        }
-    }
+@Composable
+fun isWideScreen(configuration: Configuration): Boolean {
+    val isTablet = configuration.smallestScreenWidthDp >= 600
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    return isLandscape || isTablet
 }
 
 @Composable
@@ -230,8 +250,11 @@ private fun ImageDisplay(
     iconNames: Array<String>,
     scale: Float,
     alpha: Float,
-    selectedColor1: Color
+    selectedColor1: Color,
+    addPaddingOnTop: Boolean
 ) {
+    if (addPaddingOnTop) Spacer(modifier = Modifier.height(75.dp))
+
     Image(painter = icons[randomIconIndex.intValue],
         contentDescription = null,
         modifier = Modifier
@@ -249,7 +272,7 @@ private fun ImageDisplay(
 
 @Composable
 private fun NavigationButtons(
-    randomIconIndex: MutableIntState, iconNames: Array<String>
+    viewModel: RandomAnimalIconPagerViewModel, iconNamesArraySize: Int
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -260,16 +283,13 @@ private fun NavigationButtons(
     ) {
 
         Button(onClick = {
-            randomIconIndex.intValue =
-                (randomIconIndex.intValue - 1 + iconNames.size) % iconNames.size
+            viewModel.goToPreviousIcon(iconNamesArraySize)
         }) {
             Text(stringResource(R.string.previous))
         }
 
-        Text(text = "${randomIconIndex.intValue + 1} of ${iconNames.size}")
-
         Button(onClick = {
-            randomIconIndex.intValue = (randomIconIndex.intValue + 1) % iconNames.size
+            viewModel.goToNextIcon(iconNamesArraySize)
         }) {
             Text(stringResource(R.string.next))
         }
@@ -317,9 +337,3 @@ fun AdaptiveLayout(
         }
     }
 }
-
-/*
-*   FuckRussians
-    Dupa_putina
-    jdjlkfbjdlk72
-* */
